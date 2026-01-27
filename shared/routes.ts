@@ -59,6 +59,23 @@ export const api = {
       },
     },
   },
+    doctors: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/doctors',
+      responses: {
+        200: z.array(z.custom<typeof users.$inferSelect>()),
+      },
+    },
+    get: {
+      method: 'GET' as const,
+      path: '/api/doctors/:id',
+      responses: {
+        200: z.custom<typeof users.$inferSelect>(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
  };
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {

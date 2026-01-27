@@ -33,6 +33,9 @@ export class DatabaseStorage implements IStorage {
     const [newUser] = await db.insert(users).values(user).returning();
     return newUser;
   }
+  async listDoctors(): Promise<User[]> {
+    return db.select().from(users).where(eq(users.role, "doctor"));
+  }
 
 
 }

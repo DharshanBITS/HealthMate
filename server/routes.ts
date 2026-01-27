@@ -81,6 +81,22 @@ export async function registerRoutes(
   // === DOCTORS ===
 
   
+  app.get(api.doctors.list.path, authenticateToken, async (req, res) => {
+    const doctors = await storage.listDoctors();
+    // Remove passwords
+    const safeDoctors = doctors.map(({ password, ...rest }) => rest);
+    res.json(safeDoctors);
+  });
+
+  app.get(api.doctors.get.path, authenticateToken, async (req, res) => {
+    const doctor = await storage.getUser(Number(req.params.id));
+    if (!doctor || doctor.role !== "doctor") {
+      return res.status(404).json({ message: "Doctor not found" });
+    }
+    const { password, ...safeDoctor } = doctor;
+    res.json(safeDoctor);
+  });
+
   // === AVAILABILITY ===
 
   // === APPOINTMENTS ===
