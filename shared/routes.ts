@@ -62,7 +62,7 @@ export const api = {
     doctors: {
     list: {
       method: 'GET' as const,
-      path: '/api/doctors',
+      path: '/api/doctors', // gets the doctor details for profile listing
       responses: {
         200: z.array(z.custom<typeof users.$inferSelect>()),
       },
