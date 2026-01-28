@@ -28,6 +28,21 @@ async function seed() {
 
 
   // 3. Create Patients
+  const patientPassword = await hashPassword("password123");
+  const patients = [
+    { username: "alice", password: patientPassword, role: "patient" as const, name: "Alice Anderson" },
+    { username: "bob", password: patientPassword, role: "patient" as const, name: "Bob Brown" },
+    { username: "charlie", password: patientPassword, role: "patient" as const, name: "Charlie Clark" },
+  ];
+
+  const createdPatients = [];
+  for (const p of patients) {
+    const pat = await storage.createUser(p);
+    createdPatients.push(pat);
+    console.log(`Created patient: ${pat.username}`);
+  }
+
+  console.log("Seeding complete!");
  
 }
 

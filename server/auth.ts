@@ -18,7 +18,7 @@ export function signToken(user: User): string {
   const payload = { 
     id: user.id, 
     username: user.username, 
-    role: user.role 
+    role: user.role //added the role so that doctor and patient can use the same login API
   };
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "24h" });
 }
