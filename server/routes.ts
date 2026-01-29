@@ -33,11 +33,11 @@ export async function registerRoutes(
 ): Promise<Server> {
 
   // === AUTH ===
-  
+
   app.post(api.auth.register.path, async (req, res) => {
     try {
       const input = api.auth.register.input.parse(req.body);
-      
+
       const existing = await storage.getUserByUsername(input.username);
       if (existing) {
         return res.status(409).json({ message: "Username already exists" });
@@ -45,7 +45,7 @@ export async function registerRoutes(
 
       const hashedPassword = await hashPassword(input.password);
       const user = await storage.createUser({ ...input, password: hashedPassword });
-      
+
       const token = signToken(user);
       res.status(201).json({ token, user });
     } catch (err) {
@@ -60,7 +60,7 @@ export async function registerRoutes(
     try {
       const input = api.auth.login.input.parse(req.body);
       const user = await storage.getUserByUsername(input.username);
-      
+
       if (!user || !(await comparePassword(input.password, user.password))) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
@@ -80,7 +80,7 @@ export async function registerRoutes(
 
   // === DOCTORS ===
 
-  
+
   app.get(api.doctors.list.path, authenticateToken, async (req, res) => {
     const doctors = await storage.listDoctors();
     // Remove passwords
@@ -101,6 +101,43 @@ export async function registerRoutes(
 
   // === APPOINTMENTS ===
 
+  app.get(api.appointments.list.path, authenticateToken, async (req, res) => {
+    const appts = await storage.getAppointments(req.user.id, req.user.role as "patient" | "doctor");
+    res.json(appts);
+  });
 
-  return httpServer;
-}
+  app.post(api.appointments.create.path, authenticateToken, async (req, res) => {
+    if (req.user.role !== "patient") return res.status(403).json({ message: "Only patients can book appointments" });
+
+    try {
+      const input = api.appointments.create.input.parse(req.body);
+      const appt = await storage.createAppointment({
+        ...input,
+        patientId: req.user.id,
+        status: "confirmed"
+      });
+      res.status(201).json(appt);
+    } catch (err: any) {
+      if (err.message.includes("Doctor is not available")) {
+        return res.status(400).json({ message: err.message });
+      }
+      // Drizzle unique constraint error usually has code 23505
+      if (err.code === '23505') {
+        return res.status(409).json({ message: "This slot is already booked" });
+      }
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: err.errors[0].message });
+      }
+      console.error(err);
+      res.status(500).json({ message: "Failed to book appointment" });
+    }
+  });
+
+  app.patch(api.appointments.cancel.path, authenticateToken, async (req, res) => {
+    const id = Number(req.params.id);
+    const appt = await storage.getAppointment(id);
+
+    if (!appt) return res.status(404).json({ message: "Appointment not found" });
+
+    return httpServer;
+  }
