@@ -1,7 +1,7 @@
 import { db } from "./db";
-import { 
+import {
   users,
-  type User, type InsertUser, 
+  type User, type InsertUser,
 } from "@shared/schema";
 import { eq, and, gte, lte, notExists } from "drizzle-orm";
 
@@ -10,13 +10,18 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Doctor
-  
+
   // Availability
-  
+
   // Appointment
 
+  getAppointments(userId: number, role: "patient" | "doctor"): Promise<(Appointment & { doctor?: User, patient?: User })[]>;
+  createAppointment(appt: InsertAppointment): Promise<Appointment>;
+  getAppointment(id: number): Promise<Appointment | undefined>;
+  updateAppointmentStatus(id: number, status: "cancelled" | "confirmed" | "completed"): Promise<Appointment | undefined>;
+  rescheduleAppointment(id: number, startTime: Date, endTime: Date): Promise<Appointment | undefined>;
 
 export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {

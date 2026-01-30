@@ -98,16 +98,16 @@ function AppointmentCard({ appointment }: { appointment: any }) {
 
   const date = new Date(appointment.startTime);
   const isPast = new Date() > date;
-  
+
   const statusColors = {
     confirmed: "bg-green-100 text-green-700 border-green-200",
     cancelled: "bg-red-100 text-red-700 border-red-200",
     completed: "bg-gray-100 text-gray-700 border-gray-200",
   };
 
-  const availableSlots = availability?.filter(slot => 
-    !slot.isBooked && 
-    selectedDate && 
+  const availableSlots = availability?.filter(slot =>
+    !slot.isBooked &&
+    selectedDate &&
     isSameDay(parseISO(slot.startTime as unknown as string), selectedDate)
   ) || [];
 
@@ -134,7 +134,7 @@ function AppointmentCard({ appointment }: { appointment: any }) {
           <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{format(date, "MMM")}</span>
           <span className="text-xs text-muted-foreground mt-1">{format(date, "yyyy")}</span>
         </div>
-        
+
         {/* Info Column */}
         <div className="p-6 flex-1 flex flex-col justify-between">
           <div>
@@ -147,7 +147,7 @@ function AppointmentCard({ appointment }: { appointment: any }) {
                 {appointment.status}
               </Badge>
             </div>
-            
+
             <div className="space-y-2 text-sm text-muted-foreground mb-6">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4" />
@@ -214,8 +214,8 @@ function AppointmentCard({ appointment }: { appointment: any }) {
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsRescheduleOpen(false)}>Cancel</Button>
-                    <Button 
-                      onClick={handleReschedule} 
+                    <Button
+                      onClick={handleReschedule}
                       disabled={!selectedSlot || rescheduleMutation.isPending}
                     >
                       {rescheduleMutation.isPending ? "Rescheduling..." : "Confirm Reschedule"}
@@ -239,7 +239,7 @@ function AppointmentCard({ appointment }: { appointment: any }) {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Keep it</AlertDialogCancel>
-                    <AlertDialogAction 
+                    <AlertDialogAction
                       className="bg-destructive hover:bg-destructive/90"
                       onClick={() => cancelMutation.mutate(appointment.id)}
                     >
