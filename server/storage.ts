@@ -16,13 +16,11 @@ export interface IStorage {
   // Availability
 
   // Appointment
-
   getAppointments(userId: number, role: "patient" | "doctor"): Promise<(Appointment & { doctor?: User, patient?: User })[]>;
   createAppointment(appt: InsertAppointment): Promise<Appointment>;
   getAppointment(id: number): Promise<Appointment | undefined>;
   updateAppointmentStatus(id: number, status: "cancelled" | "confirmed" | "completed"): Promise<Appointment | undefined>;
   rescheduleAppointment(id: number, startTime: Date, endTime: Date): Promise<Appointment | undefined>;
-}
 
 export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {

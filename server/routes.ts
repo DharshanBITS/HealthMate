@@ -138,5 +138,6 @@ export async function registerRoutes(
     const appt = await storage.getAppointment(id);
 
     if (!appt) return res.status(404).json({ message: "Appointment not found" });
+
     return httpServer;
   }
