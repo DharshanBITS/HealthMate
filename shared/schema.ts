@@ -14,7 +14,18 @@ export const users = pgTable("users", {
   specialization: text("specialization"), // Only for doctors
 });
 
-
+export const appointments = pgTable("appointments", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").notNull().references(() => users.id),
+  doctorId: integer("doctor_id").notNull().references(() => users.id),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time").notNull(),
+  status: text("status", { enum: ["confirmed", "cancelled", "completed"] }).default("confirmed"),
+  notes: text("notes"),
+}, (t) => ({
+  // Unique constraint to prevent double booking on the DB level
+  uniqueBooking: uniqueIndex("unique_booking_idx").on(t.doctorId, t.startTime),
+}));
 
 // === RELATIONS ===
 
@@ -24,12 +35,28 @@ export const usersRelations = relations(users, ({ many }) => ({
   availabilities: many(availabilities),
 }));
 
-
+export const appointmentsRelations = relations(appointments, ({ one }) => ({
+  patient: one(users, {
+    fields: [appointments.patientId],
+    references: [users.id],
+    relationName: "patientAppointments",
+  }),
+  doctor: one(users, {
+    fields: [appointments.doctorId],
+    references: [users.id],
+    relationName: "doctorAppointments",
+  }),
+}));
 
 
 // === SCHEMAS & TYPES ===
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
+export const insertAppointmentSchema = createInsertSchema(appointments, {
+  startTime: z.coerce.date(),
+  endTime: z.coerce.date(),
+}).omit({ id: true, status: true });
+
 
 
 // Auth specific schemas
@@ -45,4 +72,7 @@ export const registerSchema = insertUserSchema.extend({
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type LoginUser = z.infer<typeof loginSchema>;
+
+export type Appointment = typeof appointments.$inferSelect;
+export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
 

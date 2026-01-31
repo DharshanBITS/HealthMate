@@ -16,7 +16,6 @@ export interface IStorage {
   // Availability
 
   // Appointment
-
   getAppointments(userId: number, role: "patient" | "doctor"): Promise<(Appointment & { doctor?: User, patient?: User })[]>;
   createAppointment(appt: InsertAppointment): Promise<Appointment>;
   getAppointment(id: number): Promise<Appointment | undefined>;
