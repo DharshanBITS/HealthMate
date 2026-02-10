@@ -139,5 +139,61 @@ export async function registerRoutes(
 
     if (!appt) return res.status(404).json({ message: "Appointment not found" });
 
+
+    // === MESSAGES ===
+    app.get(api.appointments.messages.list.path, authenticateToken, async (req, res) => {
+      const otherUserId = Number(req.params.otherUserId);
+      const list = await storage.getMessages(req.user.id, otherUserId);
+      res.json(list);
+    });
+
+    app.post(api.appointments.messages.send.path, authenticateToken, async (req, res) => {
+      try {
+        const input = insertMessageSchema.parse({
+          ...req.body,
+          senderId: req.user.id
+        });
+        const message = await storage.createMessage(input);
+
+        // Send message notification
+        const receiver = await storage.getUser(input.receiverId);
+        const sender = await storage.getUser(req.user.id);
+        if (receiver?.email) {
+          const template = emailTemplates.newMessage(sender?.name || "User");
+          await sendEmail({ to: receiver.email, ...template });
+        }
+
+        res.status(201).json(message);
+      } catch (err) {
+        console.error("Message error:", err);
+        res.status(400).json({ message: "Invalid input" });
+      }
+    });
+
+    app.get(api.appointments.messages.conversations.path, authenticateToken, async (req, res) => {
+      try {
+        if (req.user.role === 'patient') {
+          const doctors = await storage.listDoctors();
+          const safeDoctors = doctors.map(({ password, ...rest }: any) => rest);
+          return res.json(safeDoctors);
+        }
+
+        // For doctors, list patients they have appointments with
+        const results = await db.selectDistinct({
+          id: users.id,
+          username: users.username,
+          role: users.role,
+          name: users.name
+        })
+          .from(users)
+          .innerJoin(appointments, eq(appointments.patientId, users.id))
+          .where(eq(appointments.doctorId, req.user.id));
+
+        res.json(results);
+      } catch (err) {
+        console.error("Failed to fetch conversations:", err);
+        res.status(500).json({ message: "Failed to fetch conversations" });
+      }
+    });
     return httpServer;
   }

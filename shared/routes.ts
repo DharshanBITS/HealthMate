@@ -1,13 +1,15 @@
 import { z } from 'zod';
-import { 
-  insertUserSchema, 
-  loginSchema, 
+import {
+  insertUserSchema,
+  loginSchema,
   registerSchema,
-  insertAvailabilitySchema, 
+  insertAvailabilitySchema,
   insertAppointmentSchema,
-  users, 
-  availabilities, 
-  appointments 
+  insertMessageSchema,
+  users,
+  availabilities,
+  appointments,
+  messages,
 } from './schema';
 
 export const errorSchemas = {
@@ -59,7 +61,7 @@ export const api = {
       },
     },
   },
-    doctors: {
+  doctors: {
     list: {
       method: 'GET' as const,
       path: '/api/doctors', // gets the doctor details for profile listing
@@ -76,7 +78,7 @@ export const api = {
       },
     },
   },
- };
+};
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {
   let url = path;
@@ -89,6 +91,37 @@ export function buildUrl(path: string, params?: Record<string, string | number>)
   }
   return url;
 }
+
+messages: {
+  list: {
+    method: 'GET' as const,
+      path: '/api/messages/:otherUserId',
+        responses: {
+      200: z.array(z.custom<typeof messages.$inferSelect>()),
+        401: errorSchemas.unauthorized,
+        },
+  },
+  send: {
+    method: 'POST' as const,
+      path: '/api/messages',
+        input: insertMessageSchema,
+          responses: {
+      201: z.custom<typeof messages.$inferSelect>(),
+        400: errorSchemas.validation,
+          401: errorSchemas.unauthorized,
+        },
+  },
+  conversations: {
+    method: 'GET' as const,
+      path: '/api/conversations',
+        responses: {
+      200: z.array(z.custom<typeof users.$inferSelect>()),
+        401: errorSchemas.unauthorized,
+        },
+  },
+},
+
+
 
 export type RegisterInput = z.infer<typeof api.auth.register.input>;
 export type LoginInput = z.infer<typeof api.auth.login.input>;
