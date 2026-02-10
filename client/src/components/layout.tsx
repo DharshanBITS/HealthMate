@@ -1,12 +1,12 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { 
-  Activity, 
-  Calendar, 
-  User, 
-  LogOut, 
-  LayoutDashboard, 
+import {
+  Activity,
+  Calendar,
+  User,
+  LogOut,
+  LayoutDashboard,
   Search,
   Clock,
   Menu,
@@ -42,16 +42,17 @@ export function Layout({ children }: LayoutProps) {
       <nav className="flex-1 p-4 space-y-1">
         {user?.role === 'patient' && (
           <>
+
             <NavLink href="/patient-dashboard" icon={LayoutDashboard} label="Dashboard" active={location === '/patient-dashboard'} />
             <NavLink href="/find-doctors" icon={Search} label="Find Doctors" active={location === '/find-doctors'} />
-          </>
+            <NavLink href="/prescriptions" icon={Activity} label="Prescriptions" active={location === '/prescriptions'} /></>
         )}
 
         {user?.role === 'doctor' && (
           <>
             <NavLink href="/doctor-dashboard" icon={LayoutDashboard} label="Dashboard" active={location === '/doctor-dashboard'} />
             <NavLink href="/manage-availability" icon={Clock} label="My Availability" active={location === '/manage-availability'} />
-          </>
+            <NavLink href="/doctor-prescriptions" icon={Activity} label="Prescriptions" active={location === '/doctor-prescriptions'} /> </>
         )}
       </nav>
 
@@ -65,8 +66,8 @@ export function Layout({ children }: LayoutProps) {
             <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
           </div>
         </div>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/20 transition-colors"
           onClick={logout}
         >
@@ -119,8 +120,8 @@ function NavLink({ href, icon: Icon, label, active }: { href: string; icon: any;
     <Link href={href}>
       <div className={clsx(
         "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer",
-        active 
-          ? "bg-primary text-primary-foreground shadow-md shadow-primary/25 translate-x-1" 
+        active
+          ? "bg-primary text-primary-foreground shadow-md shadow-primary/25 translate-x-1"
           : "text-muted-foreground hover:bg-secondary hover:text-foreground hover:translate-x-1"
       )}>
         <Icon className={clsx("w-5 h-5", active ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground")} />

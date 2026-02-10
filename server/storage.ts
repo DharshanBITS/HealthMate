@@ -22,6 +22,11 @@ export interface IStorage {
   updateAppointmentStatus(id: number, status: "cancelled" | "confirmed" | "completed"): Promise<Appointment | undefined>;
   rescheduleAppointment(id: number, startTime: Date, endTime: Date): Promise<Appointment | undefined>;
 
+
+  // Prescriptions
+  getPrescriptions(userId: number, role: "patient" | "doctor"): Promise<Prescription[]>;
+  createPrescription(prescription: InsertPrescription): Promise<Prescription>;
+  getPrescription(id: number): Promise<Prescription | undefined>;
 export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
