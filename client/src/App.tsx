@@ -11,25 +11,28 @@ import Home from "@/pages/home";
 import AuthPage from "@/pages/auth-page";
 import PatientDashboard from "@/pages/patient-dashboard";
 import FindDoctors from "@/pages/find-doctors";
+import Prescriptions from "@/pages/prescriptions";
 import DoctorDashboard from "@/pages/doctor-dashboard";
 import ManageAvailability from "@/pages/manage-availability";
 import DoctorProfile from "@/pages/doctor-profile";
+import DoctorPrescriptions from "@/pages/doctor-prescriptions";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/auth" component={AuthPage} />
-      
+
       {/* Patient Routes */}
       <Route path="/patient-dashboard" component={PatientDashboard} />
+      <Route path="/prescriptions" component={Prescriptions} />
       <Route path="/find-doctors" component={FindDoctors} />
       <Route path="/doctor/:id" component={DoctorProfile} />
-      
+
       {/* Doctor Routes */}
       <Route path="/doctor-dashboard" component={DoctorDashboard} />
       <Route path="/manage-availability" component={ManageAvailability} />
-      
+
       {/* Fallback */}
       <Route component={NotFound} />
     </Switch>

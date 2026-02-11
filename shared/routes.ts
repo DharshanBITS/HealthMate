@@ -1,13 +1,15 @@
 import { z } from 'zod';
-import { 
-  insertUserSchema, 
-  loginSchema, 
+import {
+  insertUserSchema,
+  loginSchema,
   registerSchema,
-  insertAvailabilitySchema, 
+  insertAvailabilitySchema,
+  insertPrescriptionSchema,
   insertAppointmentSchema,
-  users, 
-  availabilities, 
-  appointments 
+  users,
+  availabilities,
+  prescriptions,
+  appointments
 } from './schema';
 
 export const errorSchemas = {
@@ -59,7 +61,7 @@ export const api = {
       },
     },
   },
-    doctors: {
+  doctors: {
     list: {
       method: 'GET' as const,
       path: '/api/doctors', // gets the doctor details for profile listing
@@ -76,7 +78,28 @@ export const api = {
       },
     },
   },
- };
+};
+
+prescriptions: {
+  list: {
+    method: 'GET' as const,
+      path: '/api/prescriptions',
+        responses: {
+      200: z.array(z.custom<typeof prescriptions.$inferSelect>()),
+        401: errorSchemas.unauthorized,
+        },
+  },
+  create: {
+    method: 'POST' as const,
+      path: '/api/prescriptions',
+        input: insertPrescriptionSchema,
+          responses: {
+      201: z.custom<typeof prescriptions.$inferSelect>(),
+        400: errorSchemas.validation,
+          401: errorSchemas.unauthorized,
+        },
+  },
+},
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {
   let url = path;
