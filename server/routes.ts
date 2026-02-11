@@ -133,6 +133,43 @@ export async function registerRoutes(
     }
   });
 
+  // === PRESCRIPTIONS ===
+  app.get(api.appointments.prescriptions.list.path, authenticateToken, async (req, res) => {
+    try {
+      const list = await storage.getPrescriptions(req.user.id, req.user.role as "patient" | "doctor");
+      res.json(list);
+    } catch (err) {
+      console.error("Fetch prescriptions error:", err);
+      res.status(500).json({ message: "Failed to fetch prescriptions" });
+    }
+  });
+
+  app.post(api.appointments.prescriptions.create.path, authenticateToken, async (req, res) => {
+    if (req.user.role !== "doctor") return res.sendStatus(403);
+    try {
+      // Partial parse to validate incoming fields, then we'll add doctorId
+      const prescriptionData = {
+        ...req.body,
+        doctorId: req.user.id
+      };
+
+      const input = insertPrescriptionSchema.parse(prescriptionData);
+      const prescription = await storage.createPrescription(input);
+
+      const patient = await storage.getUser(input.patientId);
+      const doctor = await storage.getUser(req.user.id);
+      if (patient?.email) {
+        const template = emailTemplates.newPrescription(patient.name, doctor?.name || "Doctor");
+        await sendEmail({ to: patient.email, ...template });
+      }
+
+      res.status(201).json(prescription);
+    } catch (err) {
+      console.error("Prescription error:", err);
+      res.status(400).json({ message: "Invalid input" });
+    }
+  });
+
   app.patch(api.appointments.cancel.path, authenticateToken, async (req, res) => {
     const id = Number(req.params.id);
     const appt = await storage.getAppointment(id);

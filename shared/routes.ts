@@ -4,12 +4,12 @@ import {
   loginSchema,
   registerSchema,
   insertAvailabilitySchema,
+  insertPrescriptionSchema,
   insertAppointmentSchema,
-  insertMessageSchema,
   users,
   availabilities,
-  appointments,
-  messages,
+  prescriptions,
+  appointments
 } from './schema';
 
 export const errorSchemas = {
@@ -79,6 +79,27 @@ export const api = {
     },
   },
 };
+
+prescriptions: {
+  list: {
+    method: 'GET' as const,
+      path: '/api/prescriptions',
+        responses: {
+      200: z.array(z.custom<typeof prescriptions.$inferSelect>()),
+        401: errorSchemas.unauthorized,
+        },
+  },
+  create: {
+    method: 'POST' as const,
+      path: '/api/prescriptions',
+        input: insertPrescriptionSchema,
+          responses: {
+      201: z.custom<typeof prescriptions.$inferSelect>(),
+        400: errorSchemas.validation,
+          401: errorSchemas.unauthorized,
+        },
+  },
+},
 
 export function buildUrl(path: string, params?: Record<string, string | number>): string {
   let url = path;

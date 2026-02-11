@@ -27,6 +27,15 @@ export const appointments = pgTable("appointments", {
   uniqueBooking: uniqueIndex("unique_booking_idx").on(t.doctorId, t.startTime),
 }));
 
+export const prescriptions = pgTable("prescriptions", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").notNull().references(() => users.id),
+  doctorId: integer("doctor_id").notNull().references(() => users.id),
+  date: timestamp("date").defaultNow().notNull(),
+  medicines: text("medicines").notNull(), // JSON string for list of medicines
+  notes: text("notes"),
+});
+
 // === RELATIONS ===
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -48,6 +57,18 @@ export const appointmentsRelations = relations(appointments, ({ one }) => ({
   }),
 }));
 
+export const prescriptionsRelations = relations(prescriptions, ({ one }) => ({
+  patient: one(users, {
+    fields: [prescriptions.patientId],
+    references: [users.id],
+    relationName: "patientPrescriptions",
+  }),
+  doctor: one(users, {
+    fields: [prescriptions.doctorId],
+    references: [users.id],
+    relationName: "doctorPrescriptions",
+  }),
+}));
 
 // === SCHEMAS & TYPES ===
 
@@ -57,6 +78,7 @@ export const insertAppointmentSchema = createInsertSchema(appointments, {
   endTime: z.coerce.date(),
 }).omit({ id: true, status: true });
 
+export const insertPrescriptionSchema = createInsertSchema(prescriptions).omit({ id: true, date: true });
 
 
 // Auth specific schemas
@@ -85,3 +107,5 @@ export type LoginUser = z.infer<typeof loginSchema>;
 export type Appointment = typeof appointments.$inferSelect;
 export type InsertAppointment = z.infer<typeof insertAppointmentSchema>;
 
+export type Prescription = typeof prescriptions.$inferSelect;
+export type InsertPrescription = z.infer<typeof insertPrescriptionSchema>;

@@ -11,10 +11,11 @@ import Home from "@/pages/home";
 import AuthPage from "@/pages/auth-page";
 import PatientDashboard from "@/pages/patient-dashboard";
 import FindDoctors from "@/pages/find-doctors";
+import Prescriptions from "@/pages/prescriptions";
 import DoctorDashboard from "@/pages/doctor-dashboard";
 import ManageAvailability from "@/pages/manage-availability";
 import DoctorProfile from "@/pages/doctor-profile";
-import Messages from "@/pages/messages";
+import DoctorPrescriptions from "@/pages/doctor-prescriptions";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
 
       {/* Patient Routes */}
       <Route path="/patient-dashboard" component={PatientDashboard} />
+      <Route path="/prescriptions" component={Prescriptions} />
       <Route path="/find-doctors" component={FindDoctors} />
       <Route path="/doctor/:id" component={DoctorProfile} />
 
