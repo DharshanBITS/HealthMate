@@ -1,7 +1,6 @@
 # HealthMate — Appointment Scheduler
 
-A full-stack appointment scheduling application connecting Patients and Doctors.
-Built as a Sprint 1 MVP on Replit.
+HealthMate is a full-stack appointment scheduling application connecting patients with doctors. It features user registration/authentication, doctor availability management, appointment booking with conflict detection, and role-based dashboards.
 
 ## Features
 
@@ -11,6 +10,7 @@ Built as a Sprint 1 MVP on Replit.
 - Find Doctors by name/specialization
 - View Doctor Availability
 - Book Appointments (Conflict detection enabled)
+- Reschedule Appointments
 - Cancel Appointments
 
 **Doctors:**
@@ -19,63 +19,72 @@ Built as a Sprint 1 MVP on Replit.
 - View Dashboard (Today's Schedule)
 
 ## Tech Stack
+- **Frontend**: React, TypeScript, Vite, Tailwind CSS, shadcn/ui
+- **Backend**: Express.js, TypeScript
+- **Database**: PostgreSQL with Drizzle ORM
+- **Authentication**: JWT (JSON Web Tokens) with bcrypt password hashing
+- **State Management**: TanStack Query
+- **Email notification**: Resend API
 
-- **Frontend:** React, Tailwind CSS, Shadcn UI, TanStack Query
-- **Backend:** Node.js, Express, Drizzle ORM
-- **Database:** PostgreSQL (via Replit DB)
-- **Auth:** JWT + Bcrypt
+## Prerequisites
 
-## Setup & Run
+Before you begin, ensure you have the following installed on your local machine:
+- **Node.js**: v20 or higher
+- **npm**: v10 or higher
+- **PostgreSQL**: v15 or higher (running locally or via a cloud provider like Neon)
 
-1. **Install Dependencies:**
-   ```bash
-   npm install
-   ```
+## Local Setup Instructions
 
-2. **Database Setup:**
-   The project is configured to use Replit's PostgreSQL.
-   The schema is managed by Drizzle ORM.
-   
-   To push schema changes:
-   ```bash
-   npm run db:push
-   ```
+### 1. Clone the Repository
+```bash
+git clone <your-repo-url>
+cd healthmate
+```
 
-3. **Seed Data:**
-   Populate the database with 3 doctors and 3 patients:
-   ```bash
-   npx tsx server/seed.ts
-   ```
+### 2. Install Dependencies
+```bash
+npm install
+```
 
-4. **Run Application:**
-   Starts both backend (port 5000) and frontend (Vite).
-   ```bash
-   npm run dev
-   ```
+### 3. Database Setup
+You need a PostgreSQL database. You can use a local PostgreSQL installation or a cloud-hosted one (e.g., Neon).
 
-## Testing (Manual)
+1.  **Create a database**: Create a new database named `healthmate`.
+2.  **Environment Variables**: Create a `.env` file in the root directory:
+    ```env
+    DATABASE_URL=postgresql://<username>:<password>@<host>:<port>/healthmate
+    SESSION_SECRET=your_long_random_session_secret
+    ```
+    *Note: Replace `<username>`, `<password>`, `<host>`, and `<port>` with your actual database credentials.*
 
-**1. Login as Doctor**
-- Username: `drsmith`
-- Password: `password123`
-- Go to "My Availability" to see generated slots.
+### 4. Push Database Schema
+Sync your database with the application's schema using Drizzle:
+```bash
+npm run db:push
+```
 
-**2. Login as Patient**
-- Username: `alice`
-- Password: `password123`
-- Go to "Find Doctors", select Dr. Smith, and book a slot.
+### 5. Seed Data (Optional)
+To populate the database with initial testing data (doctors and patients):
+```bash
+npx tsx server/seed.ts
+```
 
-**3. Verify Conflict**
-- Try to book the same slot again with user `bob`.
-- You should see an error: "This slot is already booked".
+### 6. Start the Application
+Run the development server (starts both frontend and backend):
+```bash
+npm run dev
+```
 
-## Testing (Backend)
+The application will be available at `http://localhost:5000`.
 
-Run the included seed script to reset data, then use the frontend to verify flows.
-For automated testing, you can add Jest/Supertest.
+## Hosting for Assignment
 
-## Environment Variables
+To host this application for your assignment, you can use:
+- **Full-stack Hosting**: Platforms like **Render**, **Railway**, or **Fly.io** are recommended as they support both the Node.js server and PostgreSQL database in one environment.
 
-See `.env.example`.
-- `DATABASE_URL`: Connection string for PostgreSQL.
-- `SESSION_SECRET`: Secret for signing JWTs.
+### Production Build
+To create a production build locally:
+```bash
+npm run build
+npm start
+```
