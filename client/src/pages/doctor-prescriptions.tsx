@@ -24,7 +24,7 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertPrescriptionSchema } from "@shared/schema";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl,FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -43,7 +43,7 @@ export default function DoctorPrescriptions() {
     queryKey: [api.appointments.messages.conversations.path],
     queryFn: async () => {
       const res = await fetch(api.appointments.messages.conversations.path, {
-        headers: {
+        headers: { 
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         }
@@ -89,7 +89,7 @@ export default function DoctorPrescriptions() {
             <h1 className="text-3xl font-bold tracking-tight">Manage Prescriptions</h1>
             <p className="text-muted-foreground">Issue and track patient medications</p>
           </div>
-
+          
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button>

@@ -4,6 +4,23 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { hashPassword, comparePassword, signToken, verifyToken } from "./auth";
+import { sendEmail, emailTemplates } from "./lib/email";
+import { 
+  insertUserSchema,
+  insertAvailabilitySchema, 
+  insertAppointmentSchema, 
+  insertPrescriptionSchema,
+  insertMedicalRecordSchema,
+  insertMessageSchema,
+  users, 
+  availabilities, 
+  appointments, 
+  prescriptions, 
+  medicalRecords, 
+  messages 
+} from "@shared/schema";
+import { eq, and, or, gte, lte, notExists, asc, inArray, sql } from "drizzle-orm";
+import { db } from "./db";
 
 // Middleware to extract user from JWT
 declare global {
@@ -27,17 +44,35 @@ const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
   next();
 };
 
+import multer from "multer";
+import path from "path";
+import express from "express";
+
+const storage_multer = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/')
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname))
+  }
+});
+
+const upload = multer({ storage: storage_multer });
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Serve uploads as static files
+  app.use('/uploads', express.static('uploads'));
 
   // === AUTH ===
-
+  
   app.post(api.auth.register.path, async (req, res) => {
     try {
       const input = api.auth.register.input.parse(req.body);
-
+      
       const existing = await storage.getUserByUsername(input.username);
       if (existing) {
         return res.status(409).json({ message: "Username already exists" });
@@ -45,7 +80,7 @@ export async function registerRoutes(
 
       const hashedPassword = await hashPassword(input.password);
       const user = await storage.createUser({ ...input, password: hashedPassword });
-
+      
       const token = signToken(user);
       res.status(201).json({ token, user });
     } catch (err) {
@@ -60,7 +95,7 @@ export async function registerRoutes(
     try {
       const input = api.auth.login.input.parse(req.body);
       const user = await storage.getUserByUsername(input.username);
-
+      
       if (!user || !(await comparePassword(input.password, user.password))) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
@@ -80,7 +115,6 @@ export async function registerRoutes(
 
   // === DOCTORS ===
 
-
   app.get(api.doctors.list.path, authenticateToken, async (req, res) => {
     const doctors = await storage.listDoctors();
     // Remove passwords
@@ -99,6 +133,24 @@ export async function registerRoutes(
 
   // === AVAILABILITY ===
 
+  app.get(api.availabilities.list.path, authenticateToken, async (req, res) => {
+    const avail = await storage.getAvailability(Number(req.params.id));
+    res.json(avail);
+  });
+
+  app.post(api.availabilities.create.path, authenticateToken, async (req, res) => {
+    if (req.user.role !== "doctor") return res.sendStatus(403);
+    
+    try {
+      const input = api.availabilities.create.input.parse(req.body);
+      // Ensure doctor creates availability for themselves
+      const avail = await storage.createAvailability({ ...input, doctorId: req.user.id });
+      res.status(201).json(avail);
+    } catch (err) {
+      res.status(400).json({ message: "Invalid input" });
+    }
+  });
+
   // === APPOINTMENTS ===
 
   app.get(api.appointments.list.path, authenticateToken, async (req, res) => {
@@ -111,11 +163,19 @@ export async function registerRoutes(
 
     try {
       const input = api.appointments.create.input.parse(req.body);
-      const appt = await storage.createAppointment({
-        ...input,
-        patientId: req.user.id,
-        status: "confirmed"
+      const appt = await storage.createAppointment({ 
+        ...input, 
+        patientId: req.user.id
       });
+
+      // Send confirmation email
+      const doctor = await storage.getUser(appt.doctorId);
+      const patient = await storage.getUser(appt.patientId);
+      if (patient?.email) {
+        const template = emailTemplates.appointmentConfirmed(patient.name, doctor?.name || 'Doctor', new Date(appt.startTime).toLocaleString());
+        await sendEmail({ to: patient.email, ...template });
+      }
+
       res.status(201).json(appt);
     } catch (err: any) {
       if (err.message.includes("Doctor is not available")) {
@@ -130,6 +190,42 @@ export async function registerRoutes(
       }
       console.error(err);
       res.status(500).json({ message: "Failed to book appointment" });
+    }
+  });
+
+  app.patch(api.appointments.cancel.path, authenticateToken, async (req, res) => {
+    const id = Number(req.params.id);
+    const appt = await storage.getAppointment(id);
+    
+    if (!appt) return res.status(404).json({ message: "Appointment not found" });
+    
+    // Check ownership
+    if (appt.patientId !== req.user.id && appt.doctorId !== req.user.id) {
+      return res.sendStatus(403);
+    }
+
+    const updated = await storage.updateAppointmentStatus(id, "cancelled");
+    res.json(updated);
+  });
+
+  app.patch(api.appointments.reschedule.path, authenticateToken, async (req, res) => {
+    if (req.user.role !== "patient") return res.status(403).json({ message: "Only patients can reschedule appointments" });
+
+    const id = Number(req.params.id);
+    try {
+      const { startTime, endTime } = api.appointments.reschedule.input.parse(req.body);
+      const updated = await storage.rescheduleAppointment(id, startTime, endTime);
+      
+      if (!updated) return res.status(404).json({ message: "Appointment not found" });
+      res.json(updated);
+    } catch (err: any) {
+      if (err.message.includes("Doctor is not available")) {
+        return res.status(400).json({ message: err.message });
+      }
+      if (err.code === '23505') {
+        return res.status(409).json({ message: "This slot is already booked" });
+      }
+      res.status(500).json({ message: "Failed to reschedule appointment" });
     }
   });
 
@@ -152,10 +248,10 @@ export async function registerRoutes(
         ...req.body,
         doctorId: req.user.id
       };
-
+      
       const input = insertPrescriptionSchema.parse(prescriptionData);
       const prescription = await storage.createPrescription(input);
-
+      
       const patient = await storage.getUser(input.patientId);
       const doctor = await storage.getUser(req.user.id);
       if (patient?.email) {
@@ -170,67 +266,123 @@ export async function registerRoutes(
     }
   });
 
-  app.patch(api.appointments.cancel.path, authenticateToken, async (req, res) => {
-    const id = Number(req.params.id);
-    const appt = await storage.getAppointment(id);
+  // === MEDICAL RECORDS ===
+  app.get(api.appointments.medicalRecords.list.path, authenticateToken, async (req, res) => {
+    const patientId = req.user.role === "patient" ? req.user.id : Number(req.query.patientId);
+    if (!patientId) return res.status(400).json({ message: "Patient ID required" });
+    
+    // In a real app, verify doctor-patient relationship here
+    const list = await storage.getMedicalRecords(patientId);
+    res.json(list);
+  });
 
-    if (!appt) return res.status(404).json({ message: "Appointment not found" });
+  app.post(api.appointments.medicalRecords.upload.path, authenticateToken, upload.single('file'), async (req, res) => {
+    if (req.user.role !== "patient") return res.sendStatus(403);
+    try {
+      if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+      
+      const record = await storage.createMedicalRecord({
+        patientId: req.user.id,
+        fileName: req.body.fileName || req.file.originalname,
+        fileType: req.file.mimetype,
+        filePath: `/uploads/${req.file.filename}`
+      });
+      res.status(201).json(record);
+    } catch (err) {
+      console.error("Medical record error:", err);
+      res.status(400).json({ message: "Invalid input" });
+    }
+  });
 
+  // === MESSAGES ===
+  app.get(api.appointments.messages.list.path, authenticateToken, async (req, res) => {
+    const otherUserId = Number(req.params.otherUserId);
+    const list = await storage.getMessages(req.user.id, otherUserId);
+    res.json(list);
+  });
 
-    // === MESSAGES ===
-    app.get(api.appointments.messages.list.path, authenticateToken, async (req, res) => {
-      const otherUserId = Number(req.params.otherUserId);
-      const list = await storage.getMessages(req.user.id, otherUserId);
-      res.json(list);
-    });
+  app.post(api.appointments.messages.send.path, authenticateToken, async (req, res) => {
+    try {
+      const input = insertMessageSchema.parse({
+        ...req.body,
+        senderId: req.user.id
+      });
+      const message = await storage.createMessage(input);
 
-    app.post(api.appointments.messages.send.path, authenticateToken, async (req, res) => {
-      try {
-        const input = insertMessageSchema.parse({
-          ...req.body,
-          senderId: req.user.id
-        });
-        const message = await storage.createMessage(input);
-
-        // Send message notification
-        const receiver = await storage.getUser(input.receiverId);
-        const sender = await storage.getUser(req.user.id);
-        if (receiver?.email) {
-          const template = emailTemplates.newMessage(sender?.name || "User");
-          await sendEmail({ to: receiver.email, ...template });
-        }
-
-        res.status(201).json(message);
-      } catch (err) {
-        console.error("Message error:", err);
-        res.status(400).json({ message: "Invalid input" });
+      // Send message notification
+      const receiver = await storage.getUser(input.receiverId);
+      const sender = await storage.getUser(req.user.id);
+      if (receiver?.email) {
+        const template = emailTemplates.newMessage(sender?.name || "User");
+        await sendEmail({ to: receiver.email, ...template });
       }
-    });
 
-    app.get(api.appointments.messages.conversations.path, authenticateToken, async (req, res) => {
-      try {
-        if (req.user.role === 'patient') {
-          const doctors = await storage.listDoctors();
-          const safeDoctors = doctors.map(({ password, ...rest }: any) => rest);
-          return res.json(safeDoctors);
-        }
+      res.status(201).json(message);
+    } catch (err) {
+      console.error("Message error:", err);
+      res.status(400).json({ message: "Invalid input" });
+    }
+  });
 
-        // For doctors, list patients they have appointments with
-        const results = await db.selectDistinct({
-          id: users.id,
-          username: users.username,
-          role: users.role,
-          name: users.name
-        })
-          .from(users)
-          .innerJoin(appointments, eq(appointments.patientId, users.id))
-          .where(eq(appointments.doctorId, req.user.id));
-
-        res.json(results);
-      } catch (err) {
-        console.error("Failed to fetch conversations:", err);
-        res.status(500).json({ message: "Failed to fetch conversations" });
+  app.get(api.appointments.messages.conversations.path, authenticateToken, async (req, res) => {
+    try {
+      if (req.user.role === 'patient') {
+        const doctors = await storage.listDoctors();
+        const safeDoctors = doctors.map(({ password, ...rest }: any) => rest);
+        return res.json(safeDoctors);
       }
-    });
-    return httpServer;
-  }
+
+      // For doctors, list patients they have appointments with
+      const results = await db.selectDistinct({
+        id: users.id,
+        username: users.username,
+        role: users.role,
+        name: users.name
+      })
+      .from(users)
+      .innerJoin(appointments, eq(appointments.patientId, users.id))
+      .where(eq(appointments.doctorId, req.user.id));
+      
+      res.json(results);
+    } catch (err) {
+      console.error("Failed to fetch conversations:", err);
+      res.status(500).json({ message: "Failed to fetch conversations" });
+    }
+  });
+
+  // === ANALYTICS ===
+  app.get("/api/doctor/analytics", authenticateToken, async (req, res) => {
+    if (req.user.role !== "doctor") return res.sendStatus(403);
+    try {
+      const appts = await storage.getAppointments(req.user.id, "doctor");
+      
+      const totalAppointments = appts.length;
+      const completedAppointments = appts.filter(a => a.status === "confirmed").length;
+      const cancelledAppointments = appts.filter(a => a.status === "cancelled").length;
+      
+      // Trends by day (last 7 days)
+      const last7Days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        return d.toISOString().split('T')[0];
+      }).reverse();
+
+      const trends = last7Days.map(day => {
+        const count = appts.filter(a => new Date(a.startTime).toISOString().split('T')[0] === day).length;
+        return { day, count };
+      });
+
+      res.json({
+        totalAppointments,
+        completedAppointments,
+        cancelledAppointments,
+        trends
+      });
+    } catch (err) {
+      console.error("Analytics error:", err);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  return httpServer;
+}

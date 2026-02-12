@@ -13,8 +13,8 @@ export default function FindDoctors() {
   const { data: doctors, isLoading } = useDoctors();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredDoctors = doctors?.filter(doc =>
-    doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredDoctors = doctors?.filter(doc => 
+    doc.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     doc.specialization?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -29,8 +29,8 @@ export default function FindDoctors() {
 
           <div className="relative">
             <Search className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
-            <Input
-              placeholder="Search by name or specialization..."
+            <Input 
+              placeholder="Search by name or specialization..." 
               className="pl-12 h-12 text-lg rounded-2xl bg-white shadow-sm border-border/50 focus:border-primary/50 focus:ring-4 focus:ring-primary/10 transition-all"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -73,7 +73,7 @@ function DoctorCard({ doctor }: { doctor: any }) {
             <AvatarImage src={`https://ui-avatars.com/api/?name=${doctor.name}&background=0D9488&color=fff`} />
             <AvatarFallback className="bg-primary/10 text-primary font-bold">{initials}</AvatarFallback>
           </Avatar>
-
+          
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors truncate">
               {doctor.name}
@@ -84,7 +84,7 @@ function DoctorCard({ doctor }: { doctor: any }) {
               <span className="font-semibold text-foreground">4.8</span>
               <span>(120+ reviews)</span>
             </div>
-
+            
             <Link href={`/doctor/${doctor.id}`}>
               <Button className="w-full bg-secondary/50 text-foreground hover:bg-primary hover:text-white transition-all shadow-none border border-transparent hover:shadow-lg hover:shadow-primary/25">
                 <Calendar className="w-4 h-4 mr-2" />

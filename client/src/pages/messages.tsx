@@ -24,7 +24,7 @@ export default function Messages() {
     queryKey: ["/api/contacts"],
     queryFn: async () => {
       const res = await fetch(api.appointments.messages.conversations.path, {
-        headers: {
+        headers: { 
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         }
@@ -39,7 +39,7 @@ export default function Messages() {
     enabled: !!selectedUser,
     queryFn: async () => {
       const res = await fetch(`/api/messages/${selectedUser.id}`, {
-        headers: {
+        headers: { 
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
           'Content-Type': 'application/json'
         }
@@ -72,7 +72,7 @@ export default function Messages() {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageText.trim() || sendMutation.isPending) return;
-
+    
     try {
       await sendMutation.mutateAsync(messageText);
     } catch (error: any) {
@@ -98,7 +98,7 @@ export default function Messages() {
           <ScrollArea className="flex-1">
             {loadingContacts ? (
               <div className="p-4 space-y-4">
-                {[1, 2, 3].map(i => <div key={i} className="h-12 bg-muted animate-pulse rounded-lg" />)}
+                {[1,2,3].map(i => <div key={i} className="h-12 bg-muted animate-pulse rounded-lg" />)}
               </div>
             ) : (
               <div className="p-2 space-y-1">
@@ -155,7 +155,7 @@ export default function Messages() {
                 </div>
               </ScrollArea>
               <form onSubmit={handleSend} className="p-4 border-t flex gap-2">
-                <Input
+                <Input 
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
                   placeholder="Type a message..."

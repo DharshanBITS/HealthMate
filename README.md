@@ -24,7 +24,6 @@ HealthMate is a full-stack appointment scheduling application connecting patient
 - **Database**: PostgreSQL with Drizzle ORM
 - **Authentication**: JWT (JSON Web Tokens) with bcrypt password hashing
 - **State Management**: TanStack Query
-- **Email notification**: Resend API
 
 ## Prerequisites
 

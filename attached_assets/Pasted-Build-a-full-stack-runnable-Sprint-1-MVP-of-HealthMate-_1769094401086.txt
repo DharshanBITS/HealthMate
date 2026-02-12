@@ -1,0 +1,89 @@
+Build a full-stack, runnable **Sprint 1 (MVP)** of *HealthMate — Appointment Scheduler* as a single Repl. Produce real, editable source code (not a prototype screenshot). Use React for frontend and Node.js + Express for backend. Prioritize clarity, modularity, and tests. Where production-grade choices conflict with Replit free environment, choose options that run immediately on a free Repl but include a simple switch to PostgreSQL.
+
+Requirements — Sprint 1 (MVP)
+1. Patient flows:
+   - Registration (email + password), login, profile page, view appointments.
+   - JWT-based authentication; secure password hashing (bcrypt).
+2. Doctor flows:
+   - Doctor registration/login, profile listing, search by specialty.
+   - Doctor dashboard showing today's schedule + upcoming appointments.
+   - Manage availability: set working hours and create time slots.
+3. Booking:
+   - Patients can view doctor availability and book an appointment.
+   - Prevent double bookings (server-side check + DB constraint).
+   - Cancel & reschedule (basic flow).
+4. Data:
+   - Default: **SQLite** for immediate Replit use.
+   - Provide clear instructions and config to swap to **PostgreSQL** (same migrations).
+5. API:
+   - REST endpoints with OpenAPI-style API.md file.
+   - Implement server-side validation and clear error messages.
+6. Frontend:
+   - Responsive UI (Tailwind CSS).
+   - Pages: Home, Login, Register, Patient Dashboard, Doctor Listing, Booking page, Doctor Dashboard.
+7. Testing:
+   - Unit tests for booking conflict detection (backend) using Jest.
+8. Dev DX:
+   - README with run instructions and sample env file `.env.example`.
+   - Seed script to create sample doctors, patients, and available slots.
+   - `npm run dev` for backend, `npm start` for frontend (or one start script that runs both via concurrently).
+9. Quality:
+   - Add comments, use ESLint config, and basic CI config (`.github/workflows/test.yml`) to run tests.
+   - Keep code modular: controllers, services, models, routes, utils.
+10. Deliverables (what the Agent must produce):
+   - `frontend/` React app (create-react-app or Vite) with components and API service layer.
+   - `backend/` Express app with routes, controllers, models (use Prisma or Sequelize with SQLite config), migrations, and tests.
+   - `README.md`, `API.md`, `DATABASE.md`, `.env.example`, `seed.js`.
+   - Simple Dockerfile (optional) and instructions to deploy to Render/Heroku.
+   - Acceptance tests / sample curl commands in README.
+
+Implementation details & constraints
+- Authentication: JWT stored in Authorization header. Refresh tokens are optional — include explanation in README.
+- DB layer: Use **Prisma** (recommended) or Sequelize. Configure `DATABASE_URL` in `.env`. Provide Prisma schema and `prisma migrate dev` instructions. If using Sequelize, provide SQL migrations.
+- Double-book prevention:
+  - Add DB unique constraint on `(doctor_id, slot_start)` (or equivalent).
+  - In booking service: wrap check+create in a transaction and return 409 on conflict.
+- Slots: Doctors create availability as date + start_time + end_time + slot_duration (e.g., 30m) → system generates bookable slots.
+- Timezone: store all timestamps in UTC and show local time on frontend. Include note to user to set timezone in profile.
+- Email/SMS: stubbed out services (e.g., `notifications/sendEmail()` and `notifications/sendSMS()` that log to console). Add comments where to plug SendGrid/Twilio.
+- Seed: create 3 doctors with specialties and availability for the next 7 days; create 3 demo patients.
+
+Run instructions for Replit (add to README)
+- Single-Repl run: root `package.json` with `start` to run both apps (use concurrently).
+- Environment: copy `.env.example` to `.env`.
+- To try PostgreSQL locally: show `DATABASE_URL=postgresql://user:pass@host:5432/healthmate` and migration steps.
+- Provide quick test curl commands (login, list doctors, book appointment).
+
+Acceptance criteria (automated & manual)
+- Backend unit test: booking service must have a test proving two concurrent booking attempts for same slot result in one success + one conflict (409).
+- Manual smoke tests: register user, login, view doctors, book slot, see appointment in doctor dashboard, cancel appointment.
+- README includes required sample data and expected endpoints.
+
+Developer notes for the Agent (how to output files)
+- Create files exactly as needed: `backend/`, `frontend/`, `README.md`, `API.md`, `.env.example`.
+- Do not output any large inline data in the response; instead write real files in the project.
+- Ensure `npm install` and `npm run dev` commands are working out-of-the-box on a fresh Repl.
+- Keep code simple and well-documented — prefer clarity over cleverness.
+
+Extra helpful things to include (bonus)
+- Small Cypress or Playwright smoke test (optional).
+- Simple analytics stub for Sprint 2 readiness.
+- TODOs labeled `SPRINT2:` in code where to plug SendGrid/Twilio/Analytics.
+
+User stories mapping (Sprint 1) — ensure each is implemented:
+- Patient register/login/profile — implemented
+- Patient view doctors w/ specialties/availability — implemented
+- Patient book appointment — implemented + conflict prevention
+- Cancel & reschedule — implemented basic
+- Doctor register/login, dashboard, set working hours & slots — implemented
+- View patient history (simple appointments list) — implemented
+- Mark appointment completed/no-show/reschedule — implemented basic
+
+Finally, after finishing the initial build:
+1. Add a short `how to test` message at the top of README for the instructor.
+2. Provide a single command to run backend tests (e.g., `cd backend && npm test`).
+3. Add a `CHANGELOG.md` with initial generation details.
+
+If anything is unclear, assume the simplest reasonable option that runs on Replit free (SQLite + Prisma). Prioritize a complete, working Sprint 1 over extra bells & whistles.
+
+End of prompt.

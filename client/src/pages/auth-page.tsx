@@ -153,6 +153,7 @@ function RegisterForm() {
   const form = useForm<z.infer<typeof registerFormSchema>>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
+      email: "",
       username: "",
       password: "",
       name: "",
@@ -178,6 +179,19 @@ function RegisterForm() {
               <FormLabel>Full Name</FormLabel>
               <FormControl>
                 <Input placeholder="John Doe" {...field} className="h-11 bg-secondary/20" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email Address</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="john@example.com" {...field} className="h-11 bg-secondary/20" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -253,7 +267,12 @@ function RegisterForm() {
               <FormItem className="animate-in fade-in slide-in-from-top-2">
                 <FormLabel>Specialization</FormLabel>
                 <FormControl>
-                  <Input placeholder="Cardiology, General Practice..." {...field} className="h-11 bg-secondary/20" />
+                  <Input 
+                    placeholder="Cardiology, General Practice..." 
+                    {...field} 
+                    value={field.value || ""} 
+                    className="h-11 bg-secondary/20" 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
